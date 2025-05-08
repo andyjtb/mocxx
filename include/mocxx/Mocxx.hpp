@@ -4,12 +4,24 @@
 #include <frida/frida-gum.h>
 
 // stl
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <variant>
+
+#if __has_include(<filesystem>)
+#include <filesystem>
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace std {
+namespace filesystem = experimental::filesystem;
+}
+#else
+#error "No filesystem support available"
+#endif
 
 namespace mocxx {
 namespace details {

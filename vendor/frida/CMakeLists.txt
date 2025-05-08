@@ -25,10 +25,14 @@ elseif(WIN32)
     "${CMAKE_CURRENT_SOURCE_DIR}/msvc/${ARCHITECTURE_PATH}/frida-gum.lib"
     CACHE STRING "Frida gum library")
 else()
+  set(ARCHITECTURE_PATH x86_64 )
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(ARCHITECTURE_PATH arm64 )
+  endif()
   set(FRIDA_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/linux/include
     CACHE STRING "Frida gum includes")
   set(FRIDA_LIBRARIES
-    "${CMAKE_CURRENT_SOURCE_DIR}/linux/lib/libfrida-gum.a"
+    "${CMAKE_CURRENT_SOURCE_DIR}/linux/lib/${ARCHITECTURE_PATH}/libfrida-gum.a"
     CACHE STRING "Frida gum library")
 endif()
