@@ -541,7 +541,8 @@ public:
       /*      target */ targetPtr,
       /* replacement */
       details::TargetToVoidPtr(&ProxyType::Invoke),
-      /*        data */ mReplacements.at(targetPtr)->GetData());
+      /*        data */ mReplacements.at(targetPtr)->GetData(),
+      nullptr);
     gum_interceptor_end_transaction(mInterceptor);
 
     return true;
@@ -612,7 +613,7 @@ public:
   {
       void* addr = details::TargetToVoidPtr(target);
 
-      using CreationType = details::ExtractClassType<decltype(target)>::type;
+      using CreationType = typename details::ExtractClassType<decltype(target)>::type;
       auto* obj = new CreationType(args...);
       auto vtable = details::GetVtable(*obj);
 
@@ -661,7 +662,8 @@ public:
         /*      target */ funcAddr,
         /* replacement */
         details::TargetToVoidPtr(&ProxyType::Invoke),
-        /*        data */ mReplacements.at(addr)->GetData());
+        /*        data */ mReplacements.at(addr)->GetData(),
+        nullptr);
       gum_interceptor_end_transaction(mInterceptor);
 
       delete obj;
@@ -812,26 +814,26 @@ public:
   /// \param target A target to replace.
   ///
   /// \returns \a true if replacement was successful, \a false otherwise.
-  template<typename ResultGenerator,
+  template<typename ResultGeneratorType,
            typename TargetResult,
            typename... TargetArgs>
-  bool ResultGenerator(ResultGenerator&& generator,
+  bool ResultGenerator(ResultGeneratorType&& generator,
                        TargetResult (*target)(TargetArgs...))
   {
-    static_assert(std::is_same_v<details::LambdaParameters<ResultGenerator>,
+    static_assert(std::is_same_v<details::LambdaParameters<ResultGeneratorType>,
                                  details::EmptyList>,
                   "Result generator lambda must not accept any arguments");
 
-    using ResultValue = details::LambdaResult<ResultGenerator>;
+    using ResultValue = details::LambdaResult<ResultGeneratorType>;
 
     static_assert(
       std::is_convertible_v<ResultValue, TargetResult>,
       "Target result value must be convertible to the target's result type.");
 
     return Replace(
-      [capture = details::Capture(std::forward<ResultGenerator>(generator))](
+      [capture = details::Capture(std::forward<ResultGeneratorType>(generator))](
         TargetArgs... /* unused */) -> TargetResult {
-        return std::get<ResultGenerator>(*capture)();
+        return std::get<ResultGeneratorType>(*capture)();
       },
       target);
   }
@@ -845,18 +847,18 @@ public:
   /// \param target A target to replace.
   ///
   /// \returns \a true if replacement was successful, \a false otherwise.
-  template<typename ResultConstructor,
+  template<typename ResultConstructorType,
            typename TargetResult,
            typename... TargetArgs>
   bool ResultConstructor(TargetResult (*target)(TargetArgs...))
   {
     static_assert(
-      std::is_convertible_v<ResultConstructor, TargetResult>,
+      std::is_convertible_v<ResultConstructorType, TargetResult>,
       "Target result value must be convertible to the target's result type.");
 
     return Replace(
       [](TargetArgs... /* unused */) -> TargetResult {
-        return ResultConstructor();
+        return ResultConstructorType();
       },
       target);
   }
