@@ -102,6 +102,22 @@ struct Name
 
 using ConstName = const Name;
 
+struct BaseClass
+{
+  virtual int virtualFunction() const
+  {
+    return 123;
+  }
+};
+
+struct DerivedClass : public BaseClass
+{
+  int virtualFunction() const
+  {
+    return 321;
+  }
+};
+
 TEST_CASE("Mocxx follows RAII", "[Mocxx]")
 {
   REQUIRE(OverloadSet(std::vector<int>{ 3, 2, 1 }) ==
@@ -291,6 +307,27 @@ TEST_CASE("Mocxx::ReplaceMember()", "[Mocxx]")
         return self->replicate(0);
       },
       &Name::replicate));
+  }
+
+  SECTION("replacing virtual member function")
+  {
+    Mocxx mocxx;
+
+    BaseClass base;
+    REQUIRE(base.virtualFunction() == 123);
+
+    DerivedClass derived;
+    REQUIRE(derived.virtualFunction() == 321);
+
+    BaseClass* basePtr = &derived;
+    REQUIRE(basePtr->virtualFunction() == 321);
+
+    int result = 69;
+    REQUIRE(mocxx.ReplaceMemberVirtual<1>(
+      [&result](const DerivedClass* self) -> int { return result; }, &DerivedClass::virtualFunction));
+
+    REQUIRE(derived.virtualFunction() == result);
+    REQUIRE(basePtr->virtualFunction() == result);
   }
 }
 
