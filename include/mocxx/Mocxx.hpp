@@ -222,8 +222,11 @@ void*
 TargetToVoidPtr(TargetType target)
 {
   if constexpr (std::is_convertible_v<TargetType, std::string>) {
+#if defined(_WIN32) || defined(_WIN64)
+    static_assert(false, "Windows isn't implemented");
+#endif
     return GSIZE_TO_POINTER(
-      gum_module_find_export_by_name(nullptr, std::string(target).c_str()));
+      gum_module_find_export_by_name(gum_process_get_libc_module (), std::string(target).c_str()));
 
   } else {
     if constexpr (std::is_member_function_pointer_v<TargetType>) {
